@@ -2,7 +2,7 @@ import Config from './config';
 import { assign } from './util/polyfill/index';
 import drawCharts from './components/draw-charts';
 import Event from './util/event';
-import { findCurrentIndex, findRadarChartCurrentIndex, findPieChartCurrentIndex, getSeriesDataItem, getToolTipData } from  './components/charts-data'
+import { findCurrentIndex, findRadarChartCurrentIndex, findPieChartCurrentIndex, getSeriesDataItem, getToolTipData, getRadarToolTipData } from  './components/charts-data'
 import { calValidDistance } from './components/charts-util';
 
 let Charts = function(opts) {
@@ -87,6 +87,25 @@ Charts.prototype.showToolTip = function (e, option = {}) {
             }
         }
         drawCharts.call(this, opts.type, opts, this.config, this.context);        
+    } else if(this.opts.type === 'radar') {
+        let index = this.getCurrentDataIndex(e);
+        let { currentOffset } = this.scrollOption;
+        let opts = assign({}, this.opts, {
+            _scrollDistance_: currentOffset,
+            animation: false
+        });
+        if (index > -1) {
+            let seriesData = getSeriesDataItem(this.opts.series, index);
+            if (seriesData.length !== 0) {
+                let { textList, offset } = getRadarToolTipData(seriesData, this.chartData.radarData.radarDataPoints[0].data.map(p => p.position), index, this.opts.categories, option);
+                opts.tooltip = {
+                    textList,
+                    offset,
+                    option
+                };
+            }
+        }
+        drawCharts.call(this, opts.type, opts, this.config, this.context);
     }
 }
 

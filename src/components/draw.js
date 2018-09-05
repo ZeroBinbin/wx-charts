@@ -3,7 +3,7 @@ import { convertCoordinateOrigin, measureText, calRotateTranslate, createCurveCo
 import Util from '../util/util'
 import drawPointShape from './draw-data-shape'
 import { drawPointText, drawPieText, drawRingTitle, drawRadarLabel } from './draw-data-text'
-import { drawToolTip, drawToolTipSplitLine } from './draw-tooltip'
+import { drawToolTip, drawToolTipSplitLine, drawToolTipYellow } from './draw-tooltip'
 import { assign } from '../util/polyfill/index';
 
 function drawYAxisTitle (title, opts, config, context) {
@@ -143,7 +143,9 @@ export function drawAreaDataPoints (series, opts, config, context, process = 1) 
         series.forEach(function(eachSeries, seriesIndex) {
             let data = eachSeries.data;
             let points = getDataPoints(data, minRange, maxRange, xAxisPoints, eachSpacing, opts, config, process);
-            drawPointText(points, eachSeries, config, context);
+            if(!eachSeries.hideLabel) {
+                drawPointText(points, eachSeries, config, context);
+            }
         });
     }
 
@@ -236,7 +238,7 @@ export function drawToolTipBridge (opts, config, context, process) {
         context.translate(opts._scrollDistance_, 0);
     }    
     if (opts.tooltip && opts.tooltip.textList && opts.tooltip.textList.length && process === 1) {
-        drawToolTip(opts.tooltip.textList, opts.tooltip.offset, opts, config, context);
+        drawToolTipYellow(opts.tooltip.textList, opts.tooltip.offset, opts, config, context);
     }
     context.restore();
 }
@@ -245,6 +247,7 @@ export function drawXAxis (categories, opts, config, context) {
     let { xAxisPoints, startX, endX, eachSpacing } = getXAxisPoints(categories, opts, config);
     let startY = opts.height - config.padding - config.xAxisHeight - config.legendHeight;
     let endY = startY + config.xAxisLineHeight;
+    let areaFullFix = opts.extra.areaFullFix;
 
     context.save();
     if (opts._scrollDistance_ && opts._scrollDistance_ !== 0) {
@@ -258,8 +261,8 @@ export function drawXAxis (categories, opts, config, context) {
         if (opts.xAxis.type === 'calibration') {
             xAxisPoints.forEach(function(item, index) {
                 if (index > 0) {                
-                    context.moveTo(item - eachSpacing / 2, startY);
-                    context.lineTo(item - eachSpacing / 2, startY + 4);
+                    context.moveTo(item + eachSpacing / 2 , startY);
+                    context.lineTo(item + eachSpacing / 2 , startY + 4);
                 }
             });
         } else {
@@ -268,6 +271,10 @@ export function drawXAxis (categories, opts, config, context) {
                 context.lineTo(item, endY);
             });
         }
+        // if (areaFullFix) {
+        //     context.moveTo(xAxisPoints[1] - eachSpacing / 2, startY);
+        //     context.lineTo(xAxisPoints[xAxisPoints.length - 2] + eachSpacing / 2, startY);
+        // }
     }
     context.closePath();
     context.stroke();
@@ -525,7 +532,7 @@ export function drawRadarDataPoints (series, opts, config, context, process = 1)
     let coordinateAngle = getRadarCoordinateSeries(opts.categories.length);
     let centerPosition = {
         x: opts.width / 2,
-        y: (opts.height - config.legendHeight) / 2
+        y: (opts.height - (opts.legend ? config.legendHeight : 0) ) / 2
     }
 
     let radius = Math.min(
@@ -533,7 +540,7 @@ export function drawRadarDataPoints (series, opts, config, context, process = 1)
         centerPosition.y - config.radarLabelTextMargin
     );
 
-    radius -= config.padding;
+    radius -= radarOption.padding || config.padding;
 
     // draw grid
     context.beginPath();
@@ -598,8 +605,102 @@ export function drawRadarDataPoints (series, opts, config, context, process = 1)
     return {
         center: centerPosition,
         radius,
+        radarDataPoints,
         angleList: coordinateAngle
     }
+}
+
+export function drawRing (opts, config, context, process = 1) {
+    var width = opts.width;
+    var height = opts.height;
+    var ox = 0;
+    var oy = height * 10 / 20;
+    var ix = 0;
+    var iy = height * 9.5 / 20;
+    var grd = context.createLinearGradient(width / 2 - height / 2, height / 2, width / 2 + height / 2, height / 2);
+    grd.addColorStop(0, opts.ringBoneStartColor);
+    grd.addColorStop(1, opts.ringBoneEndColor);
+    context.lineWidth = 1;
+
+    // 绘制刻度
+    context.beginPath();
+    for (var i = 0; i < 60; i++) {
+        context.moveTo(ox + width / 2, -oy + height / 2);
+        context.lineTo(ix + width / 2, -iy + height / 2);
+        var nox = ox * Math.cos(Math.PI / 30) - oy * Math.sin(Math.PI / 30);
+        var noy = oy * Math.cos(Math.PI / 30) + ox * Math.sin(Math.PI / 30);
+        var nix = ix * Math.cos(Math.PI / 30) - iy * Math.sin(Math.PI / 30);
+        var niy = iy * Math.cos(Math.PI / 30) + ix * Math.sin(Math.PI / 30);
+        ox = nox;
+        oy = noy;
+        ix = nix;
+        iy = niy;
+    }
+    context.closePath();
+    context.strokeStyle = '#c7c7c7';
+    context.stroke();
+
+    // 绘制窄环
+    context.beginPath();
+    context.moveTo(width / 2, -height * 8 / 20 + height / 2);
+    context.arc(width / 2, height / 2, height * 8 / 20, -Math.PI / 2, Math.PI * 3 / 2);
+    context.closePath();
+    context.strokeStyle = opts.ringBoneColor;
+    context.stroke();
+
+    // 分
+    context.font = `${Math.round(height / 16)}px SimHei`;
+    context.fillStyle = '#c7c7c7';
+    context.fillText('分', width / 2 + height / 4.9, height / 2 + height / 14);
+    context.stroke();
+
+    // 数字
+    context.font = `bold ${Math.round(height / 4)}px SimHei`;
+    context.fillStyle = grd;
+    context.fillText(opts.value, width / 2 - height / 4.9, height / 2 + height / 14);
+
+    // 宽环
+    context.beginPath();
+    context.moveTo(width / 2, -height * 8 / 20 + height / 2);
+    context.arc(width / 2, height / 2, height * 8 / 20, -Math.PI / 2, Math.PI * 2 + Math.PI * 3 / 2 - Math.PI * 2 * opts.value * process / 5, true);
+    context.lineWidth = 20;
+    context.strokeStyle = grd;
+    context.shadowBlur = 20;
+    context.shadowColor = opts.ringBoneShadowColor;
+    context.lineCap = "round";
+    context.stroke();
+    context.closePath();
+}
+
+
+function drawSingleStar(cxt, r, R, x, y, rot) {
+    cxt.moveTo(x + r * Math.cos(18 / 180 * Math.PI), y + r * Math.sin(18 / 180 * Math.PI));
+    for (var i = 0; i < 5; i++) {
+        cxt.lineTo(Math.cos((18 + 72 * i - rot) / 180 * Math.PI) * R + x, -Math.sin((18 + 72 * i - rot) / 180 * Math.PI) * R + y);
+        cxt.lineTo(Math.cos((54 + 72 * i - rot) / 180 * Math.PI) * r + x, -Math.sin((54 + 72 * i - rot) / 180 * Math.PI) * r + y);
+    }
+}
+
+export function drawStar (opts, config, context, process = 1) {
+    var height = opts.height;
+    var width = opts.width;
+    var value = opts.value;
+    if(process === 1) {
+        context.beginPath();
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 2, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 3, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 4, height / 2, 0);
+        context.closePath();
+        context.fill();
+        context.clip();
+        context.drawed = true;
+    }
+    context.setFillStyle(opts.starBgColor || '#606DB3');
+    context.fillRect(0, 0, width, height);
+    context.setFillStyle('#FAC609');
+    context.fillRect(0, 0, width * value * process / 5, height);
 }
 
 export function drawCanvas (opts, context) {

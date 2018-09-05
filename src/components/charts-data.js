@@ -71,6 +71,16 @@ export function getToolTipData(seriesData, calPoints, index, categories, option 
     return { textList, offset };
 }
 
+export function getRadarToolTipData(seriesData, calPoints, index, categories, option = {}) {
+    let textList = seriesData.map(item => {
+        return {
+            text: option.format ? option.format(item, categories[index]) : `${item.name}: ${item.data}`,
+            color: item.color
+        }
+    });
+    return { textList, offset: calPoints[index] };
+}
+
 export function findCurrentIndex (currentPoints, xAxisPoints, opts, config, offset = 0) {
     let currentIndex = -1;
     if (isInExactChartArea(currentPoints, opts, config)) {
@@ -306,20 +316,21 @@ export function fixColumeData(points, eachSpacing, columnLen, index, config, opt
 }
 
 export function getXAxisPoints(categories, opts, config) {
-    let yAxisTotalWidth = config.yAxisWidth + config.yAxisTitleWidth;
-    let spacingValid = opts.width - 2 * config.padding - yAxisTotalWidth;
+    let yAxisTotalWidth = config.yAxisWidth + (opts.yAxis.title ? config.yAxisTitleWidth : 0);
+    let spacingValid = opts.width - 2 * config.padding - yAxisTotalWidth - config.areaPaddingEnd;
     let dataCount = opts.enableScroll ? Math.min(5, categories.length) : categories.length;
-    let eachSpacing = spacingValid / dataCount;
+    let areaFullFix = opts.extra.areaFullFix && dataCount > 1;
+    let eachSpacing = areaFullFix ? spacingValid / (dataCount - 1) : spacingValid / dataCount ;
 
     let xAxisPoints = [];
     let startX = config.padding + yAxisTotalWidth;
-    let endX = opts.width - config.padding;
+    let endX = startX + spacingValid;
     categories.forEach(function(item, index) {
-        xAxisPoints.push(startX + index * eachSpacing);
+        areaFullFix ? xAxisPoints.push(startX + index * eachSpacing - eachSpacing / 2) : xAxisPoints.push(startX + index * eachSpacing);
     });
-    if (opts.enableScroll === true) {
+    if (opts.enableScroll === true || areaFullFix) {
         xAxisPoints.push(startX + categories.length * eachSpacing);
-    } else {    
+    } else {
         xAxisPoints.push(endX);
     }
 

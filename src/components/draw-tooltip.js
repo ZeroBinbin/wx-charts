@@ -85,3 +85,70 @@ export function drawToolTip(textList, offset, opts, config, context) {
     context.stroke();
     context.closePath();
 }
+
+
+function drawRoundRect(x, y, width, height, radius, context) {
+    context.moveTo(x + radius, y);
+    context.lineTo(x + width - radius, y);
+    context.arcTo(x + width, y, x + width, y + radius, radius);
+    context.lineTo(x + width, y + height - radius);
+    context.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+    context.lineTo(x + radius, y + height);
+    context.arcTo(x, y + height, x, y + height - radius, radius);
+    context.lineTo(x, y + radius);
+    context.arcTo(x, y, x + radius, y, radius)
+}
+
+export function drawToolTipYellow(textList, offset, opts, config, context) {
+    let legendWidth = 0;
+    let legendMarginRight = 0;
+    let arrowWidth = 8;
+    let isOverRightBorder = false;
+    offset = assign({
+        x: 0,
+        y: 0
+    }, offset);
+    offset.y -= 8;
+    let textWidth = textList.map((item) => {
+        return measureText(item.text);
+    });
+
+    let toolTipWidth = legendWidth + legendMarginRight + 4 * config.toolTipPadding + Math.max.apply(null, textWidth);
+    let toolTipHeight = 2 * config.toolTipPadding + textList.length * config.toolTipLineHeight;
+    let borderRadius = toolTipHeight / 2;
+
+    // if beyond the right border
+    if (offset.x - Math.abs(opts._scrollDistance_) + arrowWidth + toolTipWidth > opts.width) {
+        isOverRightBorder = true;
+    }
+
+    // draw background rect
+    context.beginPath();
+    context.setFillStyle('#FAC609');
+    if (isOverRightBorder) {
+        //context.fillRect(offset.x - toolTipWidth - arrowWidth, offset.y, toolTipWidth, toolTipHeight);
+        drawRoundRect(offset.x - toolTipWidth - arrowWidth, offset.y, toolTipWidth, toolTipHeight, borderRadius, context);
+    } else {
+        //context.fillRect(offset.x + arrowWidth, offset.y, toolTipWidth, toolTipHeight);
+        drawRoundRect(offset.x + arrowWidth, offset.y, toolTipWidth, toolTipHeight, borderRadius, context);
+    }
+    context.closePath();
+    context.fill();
+
+
+
+    // draw text list
+    context.beginPath();
+    context.setFontSize(config.toolTipFontSize);
+    context.setFillStyle('#ffffff');
+    textList.forEach((item, index) => {
+        let startX = offset.x + arrowWidth + 2 * config.toolTipPadding + legendWidth + legendMarginRight;
+        if (isOverRightBorder) {
+            startX = offset.x - toolTipWidth - arrowWidth + 2 * config.toolTipPadding +  + legendWidth + legendMarginRight;
+        }
+        let startY = offset.y + (config.toolTipLineHeight - config.toolTipFontSize) / 2 + config.toolTipLineHeight * index + config.toolTipPadding;
+        context.fillText(item.text, startX, startY + config.toolTipFontSize);
+    });
+    context.stroke();
+    context.closePath();
+}

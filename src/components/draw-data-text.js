@@ -62,7 +62,7 @@ export function drawRadarLabel(angleList, radius, centerPosition, opts, config, 
     let radarOption = opts.extra.radar || {};    
     radius += config.radarLabelTextMargin;
     context.beginPath();
-    context.setFontSize(config.fontSize);
+    context.setFontSize(radarOption.labelFontSize || config.fontSize);
     context.setFillStyle(radarOption.labelColor || '#666666');
     angleList.forEach((angle, index) => {
         let pos = {
@@ -73,9 +73,9 @@ export function drawRadarLabel(angleList, radius, centerPosition, opts, config, 
         let startX = posRelativeCanvas.x;
         let startY = posRelativeCanvas.y;
         if (Util.approximatelyEqual(pos.x, 0)) {
-            startX -= measureText(opts.categories[index] || '') / 2;
+            startX -= measureText(opts.categories[index] || '',radarOption.labelFontSize || 10) / 2;
         } else if (pos.x < 0) {
-            startX -= measureText(opts.categories[index] || '');
+            startX -= measureText(opts.categories[index] || '',radarOption.labelFontSize || 10);
         }
         context.fillText(opts.categories[index] || '', startX, startY + config.fontSize / 2);
     });

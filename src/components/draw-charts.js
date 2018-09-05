@@ -1,24 +1,27 @@
-import { drawYAxisGrid, drawToolTipBridge, drawRadarDataPoints, drawCanvas, drawLegend, drawPieDataPoints, drawLineDataPoints, drawAreaDataPoints, drawColumnDataPoints, drawYAxis, drawXAxis } from './draw'
+import { drawYAxisGrid, drawToolTipBridge, drawRadarDataPoints, drawCanvas, drawLegend, drawPieDataPoints, drawLineDataPoints, drawAreaDataPoints, drawColumnDataPoints, drawYAxis, drawXAxis, drawRing, drawStar } from './draw'
 import { calYAxisData, getPieTextMaxLength, calCategoriesData, calLegendData } from './charts-data'
 import { fillSeriesColor } from './charts-util';
 import Animation from './animation'
 
 export default function drawCharts (type, opts, config, context) {
-    let series = opts.series;
+    let series = opts.series || [];
     let categories = opts.categories;
-    series = fillSeriesColor(series, config);
+    series = fillSeriesColor(series, opts.colors ? opts : config);
 
     let { legendHeight } = calLegendData(series, opts, config);
     config.legendHeight = legendHeight;
 
-    let { yAxisWidth } = calYAxisData(series, opts, config);
-    config.yAxisWidth = yAxisWidth;
+    if (type !== 'ring' && type !== 'star' ) {
+        let { yAxisWidth } = calYAxisData(series, opts, config);
+        config.yAxisWidth = yAxisWidth;
+    }
+
     if (categories && categories.length) {
         let { xAxisHeight, angle } = calCategoriesData(categories, opts, config);
         config.xAxisHeight = xAxisHeight;
         config._xAxisTextAngle_ = angle;
     }
-    if (type === 'pie' || type === 'ring') {    
+    if (type === 'pie') {
         config._pieTextMaxLength_ = opts.dataLabel === false ? 0 : getPieTextMaxLength(series);
     }
 
@@ -70,12 +73,12 @@ export default function drawCharts (type, opts, config, context) {
                 timing: 'easeIn',
                 duration: duration,
                 onProcess: (process) => {
-                    drawYAxisGrid(opts, config, context);                    
+                    drawYAxisGrid(opts, config, context);
+                    drawXAxis(categories, opts, config, context);
                     let { xAxisPoints, calPoints, eachSpacing } = drawAreaDataPoints(series, opts, config, context, process);
                     this.chartData.xAxisPoints = xAxisPoints;
                     this.chartData.calPoints = calPoints;
                     this.chartData.eachSpacing = eachSpacing;
-                    drawXAxis(categories, opts, config, context);
                     drawLegend(opts.series, opts, config, context);
                     drawYAxis(series, opts, config, context);
                     drawToolTipBridge(opts, config, context, process);                                      
@@ -87,6 +90,33 @@ export default function drawCharts (type, opts, config, context) {
             });
             break;
         case 'ring':
+            this.animationInstance = new Animation ({
+                timing: 'easeInOut',
+                duration: duration,
+                onProcess: (process) => {
+                    drawRing(opts, config, context, process);
+                    drawCanvas(opts, context);
+                },
+                onAnimationFinish: () => {
+                    this.event.trigger('renderComplete');
+                }
+            });
+            break;
+        case 'star':
+            drawStar(opts, config, context, 1);
+            drawCanvas(opts, context);
+            /*this.animationInstance = new Animation ({
+                timing: 'easeIn',
+                duration: duration,
+                onProcess: (process) => {
+                    drawStar(opts, config, context, 1);
+                    drawCanvas(opts, context);
+                },
+                onAnimationFinish: () => {
+                    this.event.trigger('renderComplete');
+                }
+            });*/
+            break;
         case 'pie':
             this.animationInstance = new Animation({
                 timing: 'easeInOut',
@@ -108,6 +138,7 @@ export default function drawCharts (type, opts, config, context) {
                 onProcess: (process) => {
                     this.chartData.radarData = drawRadarDataPoints(series, opts, config, context, process);
                     drawLegend(opts.series, opts, config, context);
+                    drawToolTipBridge(opts, config, context, process);
                     drawCanvas(opts, context);
                 },
                 onAnimationFinish: () => {
