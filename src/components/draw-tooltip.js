@@ -90,13 +90,13 @@ export function drawToolTip(textList, offset, opts, config, context) {
 function drawRoundRect(x, y, width, height, radius, context) {
     context.moveTo(x + radius, y);
     context.lineTo(x + width - radius, y);
-    context.arcTo(x + width, y, x + width, y + radius, radius);
+    context.arc(x + width - radius, y + radius, radius, Math.PI * 3 / 2, Math.PI * 2);
     context.lineTo(x + width, y + height - radius);
-    context.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+    context.arc(x + width - radius, y + height - radius, radius, Math.PI, Math.PI / 2);
     context.lineTo(x + radius, y + height);
-    context.arcTo(x, y + height, x, y + height - radius, radius);
+    context.arc(x + radius, y + height - radius, radius, Math.PI / 2, Math.PI);
     context.lineTo(x, y + radius);
-    context.arcTo(x, y, x + radius, y, radius)
+    context.arc(x + radius, y + radius, radius, Math.PI, Math.PI * 3 / 2);
 }
 
 export function drawToolTipYellow(textList, offset, opts, config, context) {
@@ -146,7 +146,7 @@ export function drawToolTipYellow(textList, offset, opts, config, context) {
         if (isOverRightBorder) {
             startX = offset.x - toolTipWidth - arrowWidth + 2 * config.toolTipPadding +  + legendWidth + legendMarginRight;
         }
-        let startY = offset.y + (config.toolTipLineHeight - config.toolTipFontSize) / 2 + config.toolTipLineHeight * index + config.toolTipPadding;
+        let startY = offset.y + (toolTipHeight - config.toolTipFontSize) / 2;
         context.fillText(item.text, startX, startY + config.toolTipFontSize);
     });
     context.stroke();

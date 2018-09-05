@@ -136,7 +136,7 @@ export function drawAreaDataPoints (series, opts, config, context, process = 1) 
 
         if (opts.dataPointShape !== false) {          
             let shape = config.dataPointShape[seriesIndex % config.dataPointShape.length];
-            drawPointShape(points, eachSeries.color, shape, context);
+            drawPointShape(points, '#ffffff', shape, context);
         }
     });
     if (opts.dataLabel !== false && process === 1) {
@@ -596,7 +596,7 @@ export function drawRadarDataPoints (series, opts, config, context, process = 1)
             let points = eachSeries.data.map(item => {
                 return item.position;
             });
-            drawPointShape(points, eachSeries.color, shape, context);
+            drawPointShape(points, '#ffffff', shape, context);
         }
     });
     // draw label text
@@ -699,6 +699,17 @@ export function drawStar (opts, config, context, process = 1) {
     }
     context.setFillStyle(opts.starBgColor || '#606DB3');
     context.fillRect(0, 0, width, height);
+    if (opts.showLine) {
+        context.beginPath();
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 2, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 3, height / 2, 0);
+        drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 4, height / 2, 0);
+        context.closePath();
+        context.strokeStyle = '#c7c7c7';
+        context.stroke();
+    }
     context.setFillStyle('#FAC609');
     context.fillRect(0, 0, width * value * process / 5, height);
 }
