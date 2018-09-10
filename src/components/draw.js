@@ -134,9 +134,37 @@ export function drawAreaDataPoints (series, opts, config, context, process = 1) 
             context.setGlobalAlpha(1);
         });
 
+        splitPointList.forEach(function (points) {
+            // 绘制线
+            context.setStrokeStyle(eachSeries.color);
+            context.setLineWidth(2);
+            if (points.length > 1) {
+                var firstPoint = points[0];
+                var lastPoint = points[points.length - 1];
+                context.beginPath();
+                context.moveTo(firstPoint.x, firstPoint.y);
+                if (opts.extra.lineStyle === 'curve') {
+                    points.forEach(function (item, index) {
+                        if (index > 0) {
+                            var ctrlPoint = createCurveControlPoints(points, index - 1);
+                            context.bezierCurveTo(ctrlPoint.ctrA.x, ctrlPoint.ctrA.y, ctrlPoint.ctrB.x, ctrlPoint.ctrB.y, item.x, item.y);
+                        }
+                    });
+                } else {
+                    points.forEach(function (item, index) {
+                        if (index > 0) {
+                            context.lineTo(item.x, item.y);
+                        }
+                    });
+                }
+                //context.closePath();
+                context.stroke();
+            }
+        });
+
         if (opts.dataPointShape !== false) {          
             let shape = config.dataPointShape[seriesIndex % config.dataPointShape.length];
-            drawPointShape(points, '#ffffff', shape, context);
+            drawPointShape(points, eachSeries.color, shape, context);
         }
     });
     if (opts.dataLabel !== false && process === 1) {
@@ -569,10 +597,13 @@ export function drawRadarDataPoints (series, opts, config, context, process = 1)
                 context.lineTo(pos.x, pos.y);
             }
         });
+        context.fillStyle = 'rgba(255,255,255,0.12)';
         context.lineTo(startPos.x, startPos.y);
+        context.fill();
         context.stroke();
         context.closePath();
     }
+
 
     let radarDataPoints = getRadarDataPoints(coordinateAngle, centerPosition, radius, series, opts, process);
     radarDataPoints.forEach((eachSeries, seriesIndex) => {
@@ -596,7 +627,7 @@ export function drawRadarDataPoints (series, opts, config, context, process = 1)
             let points = eachSeries.data.map(item => {
                 return item.position;
             });
-            drawPointShape(points, '#ffffff', shape, context);
+            drawPointShape(points, eachSeries.color, shape, context);
         }
     });
     // draw label text
@@ -656,7 +687,7 @@ export function drawRing (opts, config, context, process = 1) {
 
     // 数字
     context.font = `bold ${Math.round(height / 4)}px SimHei`;
-    context.fillStyle = grd;
+    context.fillStyle = opts.ringTextColor;
     context.fillText(opts.value, width / 2 - height / 4.9, height / 2 + height / 14);
 
     // 宽环
@@ -676,8 +707,8 @@ export function drawRing (opts, config, context, process = 1) {
 function drawSingleStar(cxt, r, R, x, y, rot) {
     cxt.moveTo(x + r * Math.cos(18 / 180 * Math.PI), y + r * Math.sin(18 / 180 * Math.PI));
     for (var i = 0; i < 5; i++) {
-        cxt.lineTo(Math.cos((18 + 72 * i - rot) / 180 * Math.PI) * R + x, -Math.sin((18 + 72 * i - rot) / 180 * Math.PI) * R + y);
-        cxt.lineTo(Math.cos((54 + 72 * i - rot) / 180 * Math.PI) * r + x, -Math.sin((54 + 72 * i - rot) / 180 * Math.PI) * r + y);
+        cxt.lineTo(Math.cos((18 + 72 * i - rot) / 180 * Math.PI) * R + x + 0.5, - Math.sin((18 + 72 * i - rot) / 180 * Math.PI) * R + y + 0.5);
+        cxt.lineTo(Math.cos((54 + 72 * i - rot) / 180 * Math.PI) * r + x + 0.5, - Math.sin((54 + 72 * i - rot) / 180 * Math.PI) * r + y + 0.5);
     }
 }
 
@@ -707,7 +738,8 @@ export function drawStar (opts, config, context, process = 1) {
         drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 3, height / 2, 0);
         drawSingleStar(context, height / 5, height / 2.5, height / 2.2 + width / 5 * 4, height / 2, 0);
         context.closePath();
-        context.strokeStyle = '#c7c7c7';
+        context.strokeStyle = '#FAC609';
+        context.setLineWidth(1);
         context.stroke();
     }
     context.setFillStyle('#FAC609');

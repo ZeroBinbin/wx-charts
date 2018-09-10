@@ -1,8 +1,9 @@
 export default function drawPointShape (points, color, shape, context) {
     context.beginPath();
-    context.setStrokeStyle("#ffffff");
+    context.setGlobalAlpha(1);
+    context.setStrokeStyle(color);
     context.setLineWidth(1);
-    context.setFillStyle(color);
+    context.setFillStyle("#ffffff");
 
     if (shape === 'diamond') {
         points.forEach(function(item, index) {
